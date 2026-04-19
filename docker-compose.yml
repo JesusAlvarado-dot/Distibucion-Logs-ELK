@@ -1,0 +1,59 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: adminadmin
+      MYSQL_DATABASE: mini_elk
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  log-server-1:
+    build: ./server
+    container_name: log-server-1
+    restart: always
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: adminadmin
+      DB_NAME: mini_elk
+      SERVER_NAME: log-server-1
+    depends_on:
+      - mysql
+    ports:
+      - "3001:3000"
+
+  log-server-2:
+    build: ./server
+    container_name: log-server-2
+    restart: always
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: adminadmin
+      DB_NAME: mini_elk
+      SERVER_NAME: log-server-2
+    depends_on:
+      - mysql
+    ports:
+      - "3002:3000"
+
+  agent-1:
+    build: ./agent
+    container_name: agent-1
+    restart: always
+    environment:
+      TARGET_HOST: log-server-1
+      TARGET_PORT: 3000
+      SOURCE: agent-1
+    depends_on:
+      - log-server-1
+
+volumes:
+  mysql_data:
